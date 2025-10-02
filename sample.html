@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Dashboard</title>
+    <!-- Import Chart.js library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .chart-container {
+            position: relative;
+            height: 24rem; /* 384px */
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-6 lg:p-8">
+        <header class="mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Sales Dashboard</h1>
+            <p class="text-gray-600 mt-2">ภาพรวมข้อมูลการขาย, การคืนสินค้า และประสิทธิภาพทีม</p>
+        </header>
+
+        <!-- Loading Indicator -->
+        <div id="loading" class="text-center py-10">
+            <svg class="animate-spin h-8 w-8 text-blue-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p class="mt-2 text-gray-500">กำลังโหลดข้อมูลจาก 3 ชีท...</p>
+        </div>
+
+        <div id="dashboard-content" class="hidden">
+            <!-- Filters -->
+            <div class="bg-white p-4 rounded-xl shadow-sm mb-8 flex flex-col sm:flex-row gap-4 items-center">
+                 <span class="font-medium text-gray-700">ตัวกรอง:</span>
+                 <select id="region-filter" class="w-full sm:w-auto bg-gray-100 border-gray-200 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                     <option value="all">All Regions</option>
+                 </select>
+                 <select id="category-filter" class="w-full sm:w-auto bg-gray-100 border-gray-200 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                     <option value="all">All Categories</option>
+                 </select>
+            </div>
+            
+            <!-- KPIs - Updated with Pastel Colors and New Layout -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="bg-blue-100 p-6 rounded-2xl shadow-md transition-transform transform hover:scale-105">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="text-sm font-medium text-blue-600">Total Sales</p>
+                            <p class="text-2xl lg:text-3xl font-bold text-blue-800 mt-1" id="total-sales">$0</p>
+                        </div>
+                        <div class="bg-white/60 text-blue-600 p-3 rounded-xl">
+                           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-green-100 p-6 rounded-2xl shadow-md transition-transform transform hover:scale-105">
+                     <div class="flex justify-between items-center">
+                        <div>
+                            <p class="text-sm font-medium text-green-600">Total Profit</p>
+                            <p class="text-2xl lg:text-3xl font-bold text-green-800 mt-1" id="total-profit">$0</p>
+                        </div>
+                        <div class="bg-white/60 text-green-600 p-3 rounded-xl">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v.01" /></svg>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-indigo-100 p-6 rounded-2xl shadow-md transition-transform transform hover:scale-105">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="text-sm font-medium text-indigo-600">Total Orders</p>
+                            <p class="text-2xl lg:text-3xl font-bold text-indigo-800 mt-1" id="total-orders">0</p>
+                        </div>
+                        <div class="bg-white/60 text-indigo-600 p-3 rounded-xl">
+                           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                        </div>
+                    </div>
+                </div>
+                 <div class="bg-red-100 p-6 rounded-2xl shadow-md transition-transform transform hover:scale-105">
+                     <div class="flex justify-between items-center">
+                        <div>
+                            <p class="text-sm font-medium text-red-600">Return Rate</p>
+                            <p class="text-2xl lg:text-3xl font-bold text-red-800 mt-1" id="return-rate">0%</p>
+                        </div>
+                        <div class="bg-white/60 text-red-600 p-3 rounded-xl">
+                           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2z" /></svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                <div class="bg-white p-6 rounded-xl shadow-md lg:col-span-3 chart-container">
+                    <canvas id="salesOverTimeChart"></canvas>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md lg:col-span-2 chart-container">
+                    <canvas id="salesByCategoryChart"></canvas>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md lg:col-span-2 chart-container">
+                     <canvas id="salesByRegionChart"></canvas>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md lg:col-span-3 chart-container">
+                    <canvas id="profitBySubCategoryChart"></canvas>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md lg:col-span-5 chart-container">
+                    <canvas id="monthlySalesTrendByYearChart"></canvas>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md lg:col-span-3 chart-container">
+                    <canvas id="salesByPersonChart"></canvas>
+                </div>
+                 <div class="bg-white p-6 rounded-xl shadow-md lg:col-span-2 chart-container">
+                    <canvas id="returnsByCategoryChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Global variables ---
+        let allOrdersData = [];
+        let allReturnsData = [];
+        let allPeopleData = [];
+        let chartInstances = {};
+
+        // --- Helper functions ---
+        function getRandomColor() {
+            const letters = '0123456789ABCDEF'; let color = '#';
+            for (let i = 0; i < 6; i++) { color += letters[Math.floor(Math.random() * 16)]; }
+            return color;
+        }
+
+        function parseCSV(csvText) {
+            const lines = csvText.trim().split('\n');
+            const header = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+            return lines.slice(1).map(line => {
+                const values = line.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g) || [];
+                let obj = {};
+                for (let i = 0; i < header.length; i++) { if (values[i]) { obj[header[i]] = values[i].trim().replace(/"/g, ''); } }
+                return obj;
+            });
+        }
+        
+        // --- Main Fetch and Render Logic ---
+        async function initialLoad() {
+            const loadingEl = document.getElementById('loading');
+            const contentEl = document.getElementById('dashboard-content');
+            const sheetId = '1RMZgiiBSzk4x_-kdvCH35R8Q4ap_f_uYTDswvJf78WU';
+            const urls = {
+                orders: `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=Orders`,
+                returns: `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=Returns`,
+                people: `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=People`
+            };
+            try {
+                const [ordersRes, returnsRes, peopleRes] = await Promise.all([ fetch(urls.orders), fetch(urls.returns), fetch(urls.people) ]);
+                if (!ordersRes.ok || !returnsRes.ok || !peopleRes.ok) { throw new Error(`Error fetching data`); }
+                const [ordersCsv, returnsCsv, peopleCsv] = await Promise.all([ ordersRes.text(), returnsRes.text(), peopleRes.text() ]);
+
+                allOrdersData = parseCSV(ordersCsv).map(row => ({
+                    orderId: row['Order ID'], orderDate: row['Order Date'], region: row['Region'], category: row['Category'],
+                    subCategory: row['Sub-Category'], sales: parseFloat(row['Sales']) || 0, profit: parseFloat(row['Profit']) || 0
+                }));
+                allReturnsData = parseCSV(returnsCsv);
+                allPeopleData = parseCSV(peopleCsv);
+
+                populateFilters();
+                updateDashboard();
+                
+                loadingEl.classList.add('hidden');
+                contentEl.classList.remove('hidden');
+                document.getElementById('region-filter').addEventListener('change', updateDashboard);
+                document.getElementById('category-filter').addEventListener('change', updateDashboard);
+
+            } catch (error) {
+                console.error('Error fetching or processing data:', error);
+                loadingEl.innerHTML = `<p class="text-red-500">เกิดข้อผิดพลาดในการโหลดข้อมูล: ${error.message}</p>`;
+            }
+        }
+        
+        function populateFilters() {
+            const regionFilter = document.getElementById('region-filter');
+            const categoryFilter = document.getElementById('category-filter');
+            const regions = [...new Set(allOrdersData.map(d => d.region))].sort();
+            const categories = [...new Set(allOrdersData.map(d => d.category))].sort();
+            regions.forEach(r => regionFilter.innerHTML += `<option value="${r}">${r}</option>`);
+            categories.forEach(c => categoryFilter.innerHTML += `<option value="${c}">${c}</option>`);
+        }
+        
+        function updateDashboard() {
+            const selectedRegion = document.getElementById('region-filter').value;
+            const selectedCategory = document.getElementById('category-filter').value;
+
+            let filteredOrders = allOrdersData;
+            if (selectedRegion !== 'all') {
+                filteredOrders = filteredOrders.filter(d => d.region === selectedRegion);
+            }
+            if (selectedCategory !== 'all') {
+                filteredOrders = filteredOrders.filter(d => d.category === selectedCategory);
+            }
+            
+            // For KPIs, return rate should be based on all orders
+            renderKPIs(filteredOrders, allReturnsData, allOrdersData.length);
+            
+            // Render all charts with filtered data
+            renderSalesOverTime(filteredOrders);
+            renderSalesByCategory(filteredOrders);
+            renderSalesByRegion(filteredOrders);
+            renderProfitBySubCategory(filteredOrders);
+            renderMonthlySalesTrendByYear(filteredOrders);
+            renderSalesByPerson(filteredOrders, allPeopleData);
+            renderReturnsByCategory(filteredOrders, allReturnsData);
+        }
+
+        function renderOrUpdateChart(canvasId, type, data, options) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            if (chartInstances[canvasId]) {
+                chartInstances[canvasId].destroy();
+            }
+            chartInstances[canvasId] = new Chart(ctx, { type, data, options });
+        }
+        
+        // --- Chart Rendering Functions ---
+        function renderKPIs(orders, returns, totalOrderCount) {
+            const totalSales = orders.reduce((sum, row) => sum + row.sales, 0);
+            const totalProfit = orders.reduce((sum, row) => sum + row.profit, 0);
+            const totalOrders = orders.length;
+            const returnRate = totalOrderCount > 0 ? (returns.length / totalOrderCount) * 100 : 0;
+
+            document.getElementById('total-sales').textContent = `$${totalSales.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+            document.getElementById('total-profit').textContent = `$${totalProfit.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+            document.getElementById('total-orders').textContent = totalOrders.toLocaleString('en-US');
+            document.getElementById('return-rate').textContent = `${returnRate.toFixed(2)}%`;
+        }
+        
+        function renderSalesByPerson(orders, people) {
+            const regionPersonMap = people.reduce((map, person) => { map[person.Region] = person.Person; return map; }, {});
+            const salesByPerson = orders.reduce((acc, order) => {
+                const person = regionPersonMap[order.region];
+                if (person) { acc[person] = (acc[person] || 0) + order.sales; }
+                return acc;
+            }, {});
+            const sortedPeople = Object.entries(salesByPerson).sort(([,a],[,b]) => b-a);
+            renderOrUpdateChart('salesByPersonChart', 'bar', 
+                { labels: sortedPeople.map(p => p[0]), datasets: [{ label: 'Sales', data: sortedPeople.map(p => p[1]), backgroundColor: '#8b5cf6' }] },
+                { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: 'ยอดขายตามพนักงานขาย', font: { size: 16 } } }, scales: { y: { ticks: { callback: value => `$${value/1000}k` } } } }
+            );
+        }
+        
+        function renderReturnsByCategory(orders, returns) {
+            const orderCategoryMap = orders.reduce((map, order) => { map[order.orderId] = order.category; return map; }, {});
+            const returnsByCategory = returns.reduce((acc, ret) => {
+                const category = orderCategoryMap[ret['Order ID']];
+                if (category) { acc[category] = (acc[category] || 0) + 1; }
+                return acc;
+            }, {});
+             renderOrUpdateChart('returnsByCategoryChart', 'pie',
+                { labels: Object.keys(returnsByCategory), datasets: [{ data: Object.values(returnsByCategory), backgroundColor: ['#ef4444', '#f97316', '#eab308'] }] },
+                { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: 'สัดส่วนการคืนสินค้าตามหมวดหมู่', font: { size: 16 } } } }
+            );
+        }
+
+        function renderSalesOverTime(data) {
+            const monthlySales = {};
+            data.forEach(row => {
+                if (!row.orderDate) return;
+                const dateParts = row.orderDate.split('/'); if (dateParts.length !== 3) return;
+                const date = new Date(`${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`);
+                const month = date.toLocaleString('default', { month: 'short', year: 'numeric' });
+                monthlySales[month] = (monthlySales[month] || 0) + row.sales;
+            });
+            const sortedMonths = Object.keys(monthlySales).sort((a, b) => new Date(a) - new Date(b));
+            renderOrUpdateChart('salesOverTimeChart', 'line',
+                { labels: sortedMonths, datasets: [{ label: 'Sales', data: sortedMonths.map(month => monthlySales[month]), borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', fill: true, tension: 0.3 }] },
+                { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: 'ยอดขายตามช่วงเวลา', font: { size: 16 } } } }
+            );
+        }
+        
+        function renderSalesByCategory(data) {
+            const categorySales = data.reduce((acc, row) => { acc[row.category] = (acc[row.category] || 0) + row.sales; return acc; }, {});
+            renderOrUpdateChart('salesByCategoryChart', 'doughnut',
+                { labels: Object.keys(categorySales), datasets: [{ data: Object.values(categorySales), backgroundColor: ['#3b82f6', '#10b981', '#f59e0b'], hoverOffset: 4 }] },
+                { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: 'สัดส่วนยอดขายตามหมวดหมู่', font: { size: 16 } } } }
+            );
+        }
+        
+        function renderSalesByRegion(data) {
+            const regionSales = data.reduce((acc, row) => { acc[row.region] = (acc[row.region] || 0) + row.sales; return acc; }, {});
+            renderOrUpdateChart('salesByRegionChart', 'bar',
+                { labels: Object.keys(regionSales), datasets: [{ label: 'Sales', data: Object.values(regionSales), backgroundColor: '#6366f1', }] },
+                { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: 'ยอดขายตามภูมิภาค', font: { size: 16 } } } }
+            );
+        }
+
+        function renderProfitBySubCategory(data) {
+            const subCategoryProfit = data.reduce((acc, row) => { acc[row.subCategory] = (acc[row.subCategory] || 0) + row.profit; return acc; }, {});
+            const sorted = Object.entries(subCategoryProfit).sort(([,a],[,b]) => a-b);
+            renderOrUpdateChart('profitBySubCategoryChart', 'bar',
+                { labels: sorted.map(item => item[0]), datasets: [{ label: 'Profit', data: sorted.map(item => item[1]), backgroundColor: sorted.map(item => item[1] > 0 ? 'rgba(16, 185, 129, 0.7)' : 'rgba(239, 68, 68, 0.7)'), borderColor: sorted.map(item => item[1] > 0 ? '#10b981' : '#ef4444'), borderWidth: 1 }] },
+                { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: 'กำไรตามหมวดหมู่สินค้าย่อย', font: { size: 16 } } }, scales: { x: { ticks: { callback: value => `$${value/1000}k` } } } }
+            );
+        }
+
+        function renderMonthlySalesTrendByYear(data) {
+            const salesByYearMonth = {}; const allYears = new Set(); const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            data.forEach(row => {
+                if (!row.orderDate) return; const dateParts = row.orderDate.split('/'); if (dateParts.length !== 3) return;
+                const year = dateParts[2]; const month = parseInt(dateParts[1], 10) - 1; allYears.add(year);
+                if (!salesByYearMonth[year]) { salesByYearMonth[year] = {}; }
+                salesByYearMonth[year][month] = (salesByYearMonth[year][month] || 0) + row.sales;
+            });
+            const sortedYears = Array.from(allYears).sort();
+            const datasets = sortedYears.map(year => {
+                const monthlyData = []; for (let i = 0; i < 12; i++) { monthlyData.push(salesByYearMonth[year][i] || 0); }
+                return { label: year, data: monthlyData, borderColor: getRandomColor(), fill: false, tension: 0.2 };
+            });
+            renderOrUpdateChart('monthlySalesTrendByYearChart', 'line',
+                { labels: monthNames, datasets: datasets },
+                { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: 'เทรนด์ยอดขายรายเดือน (แยกตามปี)', font: { size: 16 } }, legend: { position: 'top', } }, scales: { y: { ticks: { callback: value => `$${(value / 1000).toFixed(0)}k` } } } }
+            );
+        }
+
+        document.addEventListener('DOMContentLoaded', initialLoad);
+    </script>
+</body>
+</html>
+
